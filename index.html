@@ -2079,9 +2079,9 @@ html, body {
 .sl-avg { font-size: 12px; color: var(--accent-dark); background: #fef2f2; border: 1px dashed #fecaca; border-radius: 8px; padding: 6px 10px; margin: 2px 0 6px; }
 
 </style>
-<script>window.__BASE_PATH__='';window.__UAT_MODE__=false;window.__ASSET_VER='20261013-tmukzy';</script>
+<script>window.__BASE_PATH__='';window.__UAT_MODE__=false;window.__ASSET_VER='20261014-tmvepc';</script>
 <!-- ตั้งค่า URL ฐานข้อมูล (Google Apps Script) — แก้ที่ไฟล์ docs/config.js -->
-<script src="config.js?v=20261013-tmukzy"></script>
+<script src="config.js?v=20261014-tmvepc"></script>
 </head>
 <body>
 
@@ -4078,7 +4078,7 @@ const Manual = {
 
           <h2><i class="fa-solid fa-folder-tree"></i> 3 แท็บของหน้านี้</h2>
           <ul>
-            <li><b>แบบฟอร์มประเมิน:</b> รายการฟอร์ม (การ์ด) + ปุ่ม "สร้างฟอร์มใหม่" — แต่ละการ์ดมี แก้ไข / ตั้งเป็นค่าเริ่มต้น / เปิด-ปิด / ลบ (เมื่อมี &gt; 1 ฟอร์ม) และบรรทัด <b>"แผนกที่ใช้ฟอร์มนี้"</b> พร้อมปุ่ม "กำหนด" (เลือกชื่อแผนกจากตารางพนักงานโดยตรง · ไม่เลือก = ทุกแผนก · มีผลกับรายชื่อใน Template รวม)</li>
+            <li><b>แบบฟอร์มประเมิน:</b> รายการฟอร์ม (การ์ด) + ปุ่ม "สร้างฟอร์มใหม่" — แต่ละการ์ดมี แก้ไข / คัดลอก (สร้างฟอร์มใหม่จากสำเนา ชื่อต่อท้าย "(สำเนา)" แล้วเปิดตัวสร้างฟอร์มให้แก้ต่อ) / ตั้งเป็นค่าเริ่มต้น / เปิด-ปิด / ลบ (เมื่อมี &gt; 1 ฟอร์ม) และบรรทัด <b>"แผนกที่ใช้ฟอร์มนี้"</b> พร้อมปุ่ม "กำหนด" (เลือกชื่อแผนกจากตารางพนักงานโดยตรง · ไม่เลือก = ทุกแผนก · มีผลกับรายชื่อใน Template รวม)</li>
             <li><b>ระดับขั้นการประเมิน:</b> ตารางเกรด A–F — ชื่อระดับ / คะแนนตั้งแต่ / ถึง (น้อยกว่า) / สี / ตัวอย่าง + ปุ่มรีเซ็ต/บันทึก · ค่าเริ่มต้น A ≥ 90 · B ≥ 80 · C ≥ 70 · D ≥ 60 · F ต่ำกว่า 60 · ระดับบนสุดเลือก "Reward" ได้ · สองระดับล่างสุดต้องกรอกหมายเหตุและข้อเสนอแนะก่อนส่ง</li>
             <li><b>ผลรายลำดับและการสรุปคะแนน:</b> วิธีสรุปคะแนน (ค่าเฉลี่ยทุกลำดับ / ลำดับสุดท้าย) และนโยบายว่าใครเห็น log ผลของผู้ประเมินแต่ละลำดับ (ดูตารางด้านล่าง)</li>
           </ul>
@@ -8011,6 +8011,7 @@ const AdminUI = {
               </div>
               <div class="flex gap-2 flex-wrap">
                 <button class="btn btn-primary btn-icon" data-edit-form="${f.id}"><i class="fa-solid fa-pen"></i> แก้ไข</button>
+                <button class="btn btn-secondary btn-icon" data-copy-form="${f.id}" title="สร้างฟอร์มใหม่จากสำเนาของฟอร์มนี้"><i class="fa-solid fa-copy"></i> คัดลอก</button>
                 ${!f.isDefault ? `<button class="btn btn-secondary btn-icon" data-default-form="${f.id}"><i class="fa-solid fa-star"></i> ตั้งเป็นค่าเริ่มต้น</button>` : ''}
                 <button class="btn btn-secondary btn-icon" data-toggle-form="${f.id}">${f.active ? 'ปิด' : 'เปิด'}</button>
                 ${forms.length > 1 ? `<button class="btn btn-danger btn-icon" data-del-form="${f.id}"><i class="fa-solid fa-trash"></i></button>` : ''}
@@ -8023,6 +8024,20 @@ const AdminUI = {
 
     document.getElementById('addFormBtn').addEventListener('click', () => this.openFormBuilder(null));
     container.querySelectorAll('[data-edit-form]').forEach(b => b.addEventListener('click', () => this.openFormBuilder(b.dataset.editForm)));
+    // คัดลอกฟอร์ม: สำเนาทั้งโครงสร้าง (ส่วน/ข้อ/วินัย/โบนัส/Coaching/กล่องสรุป/แผนก) เป็นฟอร์มใหม่ แล้วเปิดตัวสร้างฟอร์มให้แก้ชื่อ/รายละเอียดต่อ
+    container.querySelectorAll('[data-copy-form]').forEach(b => b.addEventListener('click', () => {
+      const src = DB.getFormById(b.dataset.copyForm); if (!src) return;
+      const copy = JSON.parse(JSON.stringify(src));
+      const now = new Date().toISOString();
+      copy.id = DB.uid('f');
+      copy.name = `${src.name || 'แบบฟอร์ม'} (สำเนา)`;
+      copy.isDefault = false;            // สำเนาไม่แย่งสถานะ "ค่าเริ่มต้น" ของต้นฉบับ
+      copy.createdAt = now; copy.updatedAt = now;
+      DB.upsertForm(copy);
+      toast(`คัดลอกเป็น "${copy.name}" แล้ว — แก้ชื่อ/รายละเอียดได้เลย`, 'success', { title: 'คัดลอกแบบฟอร์ม' });
+      App.go('hr-forms');
+      this.openFormBuilder(copy.id);
+    }));
     container.querySelectorAll('[data-default-form]').forEach(b => b.addEventListener('click', () => {
       const f = DB.getFormById(b.dataset.defaultForm); f.isDefault = true; DB.upsertForm(f);
       toast('ตั้งเป็นค่าเริ่มต้นแล้ว', 'success'); App.go('hr-forms');
